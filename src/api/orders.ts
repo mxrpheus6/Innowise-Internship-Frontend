@@ -1,13 +1,7 @@
 import { authApi } from './auth';
 import type { OrderResponse, OrderStatus } from '../types/orders';
 import { config } from '../config';
-
-export interface CreateOrderRequest {
-  orderItems: {
-    itemId: string;
-    quantity: number;
-  }[];
-}
+import type { CreateOrderRequest } from '../types/orders';
 
 export const ordersApi = {
   async getUserOrders(userId: string, status?: OrderStatus): Promise<OrderResponse[]> {

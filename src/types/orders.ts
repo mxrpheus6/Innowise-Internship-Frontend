@@ -17,3 +17,10 @@ export interface OrderResponse {
   creationDate: string;
   items: OrderItemResponse[];
 }
+
+export interface CreateOrderRequest {
+  orderItems: {
+    itemId: string;
+    quantity: number;
+  }[];
+}
