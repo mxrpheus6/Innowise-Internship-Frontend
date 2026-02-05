@@ -24,13 +24,14 @@ export const authApi = {
     if (token) headers.set('Authorization', `Bearer ${token}`);
     headers.set('Content-Type', 'application/json');
 
-    let response = await fetch(`${config.gatewayUrl}${endpoint}`, { ...options, headers });
+    const url = `${config.gatewayUrl}${endpoint}`;
+    let response = await fetch(url, { ...options, headers });
 
     if (response.status === 401) {
       const refreshed = await this.refresh();
       if (refreshed) {
         headers.set('Authorization', `Bearer ${getAccessToken()}`);
-        response = await fetch(`${config.gatewayUrl}${endpoint}`, { ...options, headers });
+        response = await fetch(url, { ...options, headers });
       }
     }
 
@@ -42,11 +43,11 @@ export const authApi = {
   },
 
   async getCurrentUser(): Promise<UserResponse> {
-    return this.request<UserResponse>('/api/v1/users/me');
+    return this.request<UserResponse>(config.endpoints.user.me);
   },
 
   async login(data: AuthRequest): Promise<AuthResponse> {
-    const res = await fetch(`${config.authUrl}/login`, {
+    const res = await fetch(`${config.authUrl}${config.endpoints.auth.login}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -73,7 +74,7 @@ export const authApi = {
     const refreshToken = getRefreshToken();
     if (!refreshToken) return false;
     try {
-      const response = await fetch(`${config.authUrl}/refresh`, {
+      const response = await fetch(`${config.authUrl}${config.endpoints.auth.refresh}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: refreshToken }),

@@ -50,7 +50,6 @@ export default function ProfileCard({ user, onLogout }: ProfileCardProps) {
         </ListGroup>
 
         <div className="d-grid gap-2">
-          {/* НОВАЯ КНОПКА МАГАЗИНА */}
           <Button 
             variant="success" 
             className="fw-bold mb-2"

@@ -1,5 +1,6 @@
 import { authApi } from './auth';
 import type { OrderResponse, OrderStatus } from '../types/orders';
+import { config } from '../config';
 
 export interface CreateOrderRequest {
   orderItems: {
@@ -12,8 +13,7 @@ export const ordersApi = {
   async getUserOrders(userId: string, status?: OrderStatus): Promise<OrderResponse[]> {
     const params = new URLSearchParams();
     if (status) params.append('status', status);
-    const query = params.toString();
-    const endpoint = query ? `/api/v1/orders/me?${query}` : '/api/v1/orders/me';
+    const endpoint = `${config.endpoints.orders.me}${params.toString() ? `?${params}` : ''}`;
 
     return authApi.request<OrderResponse[]>(endpoint, {
       headers: { 'X-User-Id': userId },

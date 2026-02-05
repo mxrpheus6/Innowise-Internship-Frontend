@@ -1,6 +1,6 @@
 import { Container, Spinner, Alert, Row, Col } from 'react-bootstrap';
 import { useAuth } from '../context/AuthContext';
-import ProfileCard from '../components/ProfileCard';
+import ProfileCard from './ProfileCard';
 import { useProfile } from '../hooks/useProfile';
 
 export default function ProfilePage() {

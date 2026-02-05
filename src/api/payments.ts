@@ -1,17 +1,13 @@
 import { authApi } from './auth';
 import type { PaymentResponse } from '../types/payments';
+import { config } from '../config';
 
 export const paymentsApi = {
-  async getCurrentUserPayments(
-    userId: string,
-    statuses?: string[]
-  ): Promise<PaymentResponse[]> {
+  async getCurrentUserPayments(userId: string, statuses?: string[]): Promise<PaymentResponse[]> {
     const params = new URLSearchParams();
     statuses?.forEach((s) => params.append('statuses', s));
-    const query = params.toString();
-    const endpoint = query
-      ? `/api/v1/payments/me?${query}`
-      : '/api/v1/payments/me';
+    const endpoint = `${config.endpoints.payments.me}${params.toString() ? `?${params}` : ''}`;
+    
     return authApi.request<PaymentResponse[]>(endpoint, {
       headers: { 'X-User-Id': userId },
     });
