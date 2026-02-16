@@ -1,12 +1,21 @@
-import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from './AuthContext';
+import { useEffect } from "react";
+import { Outlet } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { Spinner } from "react-bootstrap";
 
 const ProtectedRoute = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, login, isInitialized } = useAuth();
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+  useEffect(() => {
+    if (isInitialized && !isAuthenticated) {
+      login();
+    }
+  }, [isInitialized, isAuthenticated, login]);
+
+  if (!isInitialized || !isAuthenticated) {
+    return <Spinner />;
   }
+
   return <Outlet />;
 };
 

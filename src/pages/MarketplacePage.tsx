@@ -1,10 +1,19 @@
-import { useEffect, useState, useMemo } from 'react';
-import { Container, Row, Col, Card, Button, ListGroup, Spinner, Alert } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
-import { itemsApi } from '../api/items';
-import { ordersApi } from '../api/orders';
-import { ROUTES } from '../routes';
-import type { ItemResponse } from '../types/items';
+import { useEffect, useState, useMemo } from "react";
+import {
+  Container,
+  Row,
+  Col,
+  Card,
+  Button,
+  ListGroup,
+  Spinner,
+  Alert,
+} from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
+import { itemsApi } from "../api/items";
+import { ordersApi } from "../api/orders";
+import { ROUTES } from "../routes";
+import type { ItemResponse } from "../types/items";
 
 interface CartItem {
   item: ItemResponse;
@@ -12,24 +21,22 @@ interface CartItem {
 }
 
 function formatPrice(value: number) {
-  return new Intl.NumberFormat('ru-RU', {
-    style: 'currency',
-    currency: 'USD',
+  return new Intl.NumberFormat("ru-RU", {
+    style: "currency",
+    currency: "USD",
     minimumFractionDigits: 2,
   }).format(value);
 }
 
 export default function MarketplacePage() {
   const navigate = useNavigate();
-  
-  // Состояния
+
   const [items, setItems] = useState<ItemResponse[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [creatingOrder, setCreatingOrder] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Загрузка товаров
   useEffect(() => {
     fetchItems();
   }, []);
@@ -41,19 +48,18 @@ export default function MarketplacePage() {
       setItems(data);
     } catch (e) {
       console.error(e);
-      setError('Не удалось загрузить список товаров.');
+      setError("Unable to load the list of products.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Логика корзины
   const addToCart = (item: ItemResponse) => {
     setCart((prev) => {
       const existing = prev.find((i) => i.item.id === item.id);
       if (existing) {
         return prev.map((i) =>
-          i.item.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
+          i.item.id === item.id ? { ...i, quantity: i.quantity + 1 } : i,
         );
       }
       return [...prev, { item, quantity: 1 }];
@@ -95,12 +101,12 @@ export default function MarketplacePage() {
         })),
       };
 
-      await ordersApi.createOrder(orderPayload);      
+      await ordersApi.createOrder(orderPayload);
       clearCart();
       navigate(ROUTES.ORDERS);
     } catch (err) {
       console.error(err);
-      setError('Ошибка при создании заказа. Попробуйте снова.');
+      setError("Error creating order. Please try again.");
     } finally {
       setCreatingOrder(false);
     }
@@ -108,7 +114,10 @@ export default function MarketplacePage() {
 
   if (loading) {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
+      <div
+        className="d-flex justify-content-center align-items-center"
+        style={{ height: "80vh" }}
+      >
         <Spinner animation="border" variant="primary" />
       </div>
     );
@@ -117,24 +126,30 @@ export default function MarketplacePage() {
   return (
     <Container className="py-5">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="mb-0">Магазин товаров</h2>
-        <Button variant="outline-primary" onClick={() => navigate(ROUTES.PROFILE)}>
-            ← Профиль
+        <h2 className="mb-0">Shop</h2>
+        <Button
+          variant="outline-primary"
+          onClick={() => navigate(ROUTES.PROFILE)}
+        >
+          ← Profile
         </Button>
-        </div>
-      
-      {error && <Alert variant="danger" dismissible onClose={() => setError(null)}>{error}</Alert>}
+      </div>
+
+      {error && (
+        <Alert variant="danger" dismissible onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
 
       <Row>
-        {/* Левая колонка: Каталог товаров */}
         <Col lg={8} md={7}>
           <Row xs={1} md={2} xl={3} className="g-4">
             {items.map((item) => (
               <Col key={item.id}>
                 <Card className="h-100 shadow-sm border-0">
-                  <div 
-                    className="bg-light d-flex align-items-center justify-content-center" 
-                    style={{ height: '150px', fontSize: '3rem' }}
+                  <div
+                    className="bg-light d-flex align-items-center justify-content-center"
+                    style={{ height: "150px", fontSize: "3rem" }}
                   >
                     📦
                   </div>
@@ -143,12 +158,12 @@ export default function MarketplacePage() {
                     <Card.Text className="fw-bold text-primary fs-5">
                       {formatPrice(item.price)}
                     </Card.Text>
-                    <Button 
-                      variant="outline-primary" 
+                    <Button
+                      variant="outline-primary"
                       className="mt-auto w-100"
                       onClick={() => addToCart(item)}
                     >
-                      В корзину
+                      Add To Cart
                     </Button>
                   </Card.Body>
                 </Card>
@@ -157,24 +172,26 @@ export default function MarketplacePage() {
           </Row>
         </Col>
 
-        {/* Правая колонка: Корзина (Sticky) */}
         <Col lg={4} md={5}>
-          <div style={{ position: 'sticky', top: '20px' }}>
+          <div style={{ position: "sticky", top: "20px" }}>
             <Card className="shadow-sm border-0">
               <Card.Header className="bg-primary text-white">
-                <h5 className="mb-0">Ваша корзина</h5>
+                <h5 className="mb-0">Your cart:</h5>
               </Card.Header>
               <Card.Body className="p-0">
                 {cart.length === 0 ? (
                   <div className="p-4 text-center text-muted">
-                    Корзина пуста
+                    Cart Is Empty
                   </div>
                 ) : (
                   <ListGroup variant="flush">
                     {cart.map((c) => (
                       <ListGroup.Item key={c.item.id}>
                         <div className="d-flex justify-content-between align-items-center mb-2">
-                          <span className="fw-bold text-truncate" style={{ maxWidth: '140px' }}>
+                          <span
+                            className="fw-bold text-truncate"
+                            style={{ maxWidth: "140px" }}
+                          >
                             {c.item.name}
                           </span>
                           <span className="text-muted small">
@@ -183,26 +200,30 @@ export default function MarketplacePage() {
                         </div>
                         <div className="d-flex justify-content-between align-items-center">
                           <div className="d-flex align-items-center">
-                            <Button 
-                              variant="outline-secondary" 
-                              size="sm" 
+                            <Button
+                              variant="outline-secondary"
+                              size="sm"
                               className="px-2 py-0"
                               onClick={() => changeQuantity(c.item.id, -1)}
-                            >-</Button>
+                            >
+                              -
+                            </Button>
                             <span className="mx-2">{c.quantity}</span>
-                            <Button 
-                              variant="outline-secondary" 
-                              size="sm" 
+                            <Button
+                              variant="outline-secondary"
+                              size="sm"
                               className="px-2 py-0"
                               onClick={() => changeQuantity(c.item.id, 1)}
-                            >+</Button>
+                            >
+                              +
+                            </Button>
                           </div>
-                          <Button 
-                            variant="link" 
+                          <Button
+                            variant="link"
                             className="text-danger p-0 text-decoration-none small"
                             onClick={() => removeFromCart(c.item.id)}
                           >
-                            Удалить
+                            Remove
                           </Button>
                         </div>
                       </ListGroup.Item>
@@ -210,21 +231,27 @@ export default function MarketplacePage() {
                   </ListGroup>
                 )}
               </Card.Body>
-              
+
               {cart.length > 0 && (
                 <Card.Footer className="bg-white">
                   <div className="d-flex justify-content-between align-items-center mb-3">
-                    <span className="fs-5">Итого:</span>
-                    <span className="fs-4 fw-bold text-primary">{formatPrice(totalAmount)}</span>
+                    <span className="fs-5">Total:</span>
+                    <span className="fs-4 fw-bold text-primary">
+                      {formatPrice(totalAmount)}
+                    </span>
                   </div>
                   <div className="d-grid">
-                    <Button 
-                      variant="success" 
-                      size="lg" 
+                    <Button
+                      variant="success"
+                      size="lg"
                       disabled={creatingOrder}
                       onClick={handleCheckout}
                     >
-                      {creatingOrder ? <Spinner size="sm" animation="border" /> : 'Оформить заказ'}
+                      {creatingOrder ? (
+                        <Spinner size="sm" animation="border" />
+                      ) : (
+                        "Place an Order"
+                      )}
                     </Button>
                   </div>
                 </Card.Footer>

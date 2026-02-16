@@ -1,65 +1,91 @@
-import { useState } from 'react';
-import { Container, Spinner, Alert, Row, Col, Table, Card, Button, Badge, Modal } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
-import { useProfile } from '../hooks/useProfile';
-import { useOrders } from '../hooks/useOrders';
-import { ROUTES } from '../routes';
-import type { OrderStatus, OrderResponse, OrderItemResponse } from '../types/orders';
+import { useState } from "react";
+import {
+  Container,
+  Spinner,
+  Alert,
+  Row,
+  Col,
+  Table,
+  Card,
+  Button,
+  Badge,
+  Modal,
+} from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
+import { useProfile } from "../hooks/useProfile";
+import { useOrders } from "../hooks/useOrders";
+import { ROUTES } from "../routes";
+import type {
+  OrderStatus,
+  OrderResponse,
+  OrderItemResponse,
+} from "../types/orders";
 
 function formatTimestamp(iso: string): string {
   try {
-    return new Date(iso).toLocaleString('ru-RU', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(iso).toLocaleString("en-EN", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   } catch {
     return iso;
   }
 }
 
-// Форматирование цены
 function formatCurrency(amount: number) {
-  return new Intl.NumberFormat('ru-RU', {
-    style: 'currency',
-    currency: 'USD',
+  return new Intl.NumberFormat("en-EN", {
+    style: "currency",
+    currency: "USD",
     minimumFractionDigits: 2,
   }).format(amount);
 }
 
-// Подсчет общей суммы заказа
 function calculateTotal(items: OrderItemResponse[]) {
-  const total = items.reduce((acc, curr) => acc + (curr.item.price * curr.quantity), 0);
+  const total = items.reduce(
+    (acc, curr) => acc + curr.item.price * curr.quantity,
+    0,
+  );
   return formatCurrency(total);
 }
 
 function getStatusBadge(status: OrderStatus): string {
   switch (status) {
-    case 'PAID': return 'success';
-    case 'NEW': return 'primary';
-    case 'CANCELLED': return 'danger';
-    default: return 'secondary';
+    case "PAID":
+      return "success";
+    case "NEW":
+      return "primary";
+    case "CANCELLED":
+      return "danger";
+    default:
+      return "secondary";
   }
 }
 
 function translateStatus(status: OrderStatus): string {
   switch (status) {
-    case 'NEW': return 'Новый';
-    case 'PAID': return 'Оплачен';
-    case 'CANCELLED': return 'Отменен';
-    default: return status;
+    case "NEW":
+      return "Pending";
+    case "PAID":
+      return "Paid";
+    case "CANCELLED":
+      return "Cancelled";
+    default:
+      return status;
   }
 }
 
 export default function OrdersPage() {
   const navigate = useNavigate();
   const { user, loading: userLoading, error: userError } = useProfile();
-  const { orders, loading: ordersLoading, error: ordersError } = useOrders(user?.id ?? null);
-  
+  const { orders, loading: ordersLoading, error: ordersError } = useOrders();
+
   // Состояние для выбранного заказа (для модального окна)
-  const [selectedOrder, setSelectedOrder] = useState<OrderResponse | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<OrderResponse | null>(
+    null,
+  );
 
   const loading = userLoading || ordersLoading;
   const error = userError ?? ordersError;
@@ -69,7 +95,10 @@ export default function OrdersPage() {
 
   if (loading) {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '80vh' }}>
+      <div
+        className="d-flex justify-content-center align-items-center"
+        style={{ minHeight: "80vh" }}
+      >
         <Spinner animation="grow" variant="primary" />
       </div>
     );
@@ -80,9 +109,12 @@ export default function OrdersPage() {
       <Row className="justify-content-center">
         <Col>
           <div className="d-flex justify-content-between align-items-center mb-4">
-            <h2 className="mb-0">Мои заказы</h2>
-            <Button variant="outline-primary" onClick={() => navigate(ROUTES.PROFILE)}>
-              ← Профиль
+            <h2 className="mb-0">My orders</h2>
+            <Button
+              variant="outline-primary"
+              onClick={() => navigate(ROUTES.PROFILE)}
+            >
+              ← Profile
             </Button>
           </div>
 
@@ -92,39 +124,36 @@ export default function OrdersPage() {
             <Card.Body className="p-0">
               {orders.length === 0 ? (
                 <div className="text-center text-muted py-5">
-                  История заказов пуста.
+                  Orders history is empty.
                 </div>
               ) : (
                 <Table responsive hover className="mb-0 align-middle">
                   <thead className="table-light">
                     <tr>
-                      <th>ID Заказа</th>
-                      <th>Дата</th>
-                      <th className="text-center">Позиции</th>
-                      <th>Сумма</th>
-                      <th>Статус</th>
+                      <th>Order ID</th>
+                      <th>Date</th>
+                      <th className="text-center">Positions</th>
+                      <th>Total</th>
+                      <th>Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {orders.map((order) => {
-                      // Считаем уникальные товары или общее количество штук
-                      const itemsCount = order.items.length; 
-                      
+                      const itemsCount = order.items.length;
+
                       return (
                         <tr key={order.id}>
-                          {/* Полный ID, шрифт моноширинный для читаемости */}
                           <td className="font-monospace small user-select-all">
                             {order.id}
                           </td>
                           <td>{formatTimestamp(order.creationDate)}</td>
                           <td className="text-center">
-                            {/* Кнопка-ссылка для открытия деталей */}
-                            <Button 
-                              variant="link" 
+                            <Button
+                              variant="link"
                               className="text-decoration-none"
                               onClick={() => handleShowDetails(order)}
                             >
-                              {itemsCount} {itemsCount === 1 ? 'товар' : itemsCount < 5 ? 'товара' : 'товаров'}
+                              {itemsCount} {itemsCount === 1 ? "item" : "items"}
                             </Button>
                           </td>
                           <td className="fw-bold text-nowrap">
@@ -147,23 +176,37 @@ export default function OrdersPage() {
       </Row>
 
       {/* Модальное окно с деталями заказа */}
-      <Modal show={!!selectedOrder} onHide={handleCloseModal} centered size="lg">
+      <Modal
+        show={!!selectedOrder}
+        onHide={handleCloseModal}
+        centered
+        size="lg"
+      >
         <Modal.Header closeButton>
-          <Modal.Title>Детали заказа</Modal.Title>
+          <Modal.Title>Order details</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {selectedOrder && (
             <div>
               <div className="mb-3">
-                <strong>ID:</strong> <span className="font-monospace text-muted">{selectedOrder.id}</span>
+                <strong>ID:</strong>{" "}
+                <span className="font-monospace text-muted">
+                  {selectedOrder.id}
+                </span>
               </div>
               <Table striped bordered hover size="sm">
                 <thead>
                   <tr>
-                    <th>Наименование</th>
-                    <th className="text-center" style={{ width: '100px' }}>Кол-во</th>
-                    <th className="text-end" style={{ width: '120px' }}>Цена за ед.</th>
-                    <th className="text-end" style={{ width: '120px' }}>Сумма</th>
+                    <th>Name</th>
+                    <th className="text-center" style={{ width: "100px" }}>
+                      Amount
+                    </th>
+                    <th className="text-end" style={{ width: "120px" }}>
+                      Price per unit
+                    </th>
+                    <th className="text-end" style={{ width: "120px" }}>
+                      Amount
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -171,17 +214,25 @@ export default function OrdersPage() {
                     <tr key={idx}>
                       <td>{lineItem.item.name}</td>
                       <td className="text-center">{lineItem.quantity}</td>
-                      <td className="text-end">{formatCurrency(lineItem.item.price)}</td>
                       <td className="text-end">
-                        {formatCurrency(lineItem.item.price * lineItem.quantity)}
+                        {formatCurrency(lineItem.item.price)}
+                      </td>
+                      <td className="text-end">
+                        {formatCurrency(
+                          lineItem.item.price * lineItem.quantity,
+                        )}
                       </td>
                     </tr>
                   ))}
                 </tbody>
                 <tfoot>
                   <tr>
-                    <td colSpan={3} className="text-end fw-bold">Итого:</td>
-                    <td className="text-end fw-bold">{calculateTotal(selectedOrder.items)}</td>
+                    <td colSpan={3} className="text-end fw-bold">
+                      Total:
+                    </td>
+                    <td className="text-end fw-bold">
+                      {calculateTotal(selectedOrder.items)}
+                    </td>
                   </tr>
                 </tfoot>
               </Table>
@@ -190,7 +241,7 @@ export default function OrdersPage() {
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleCloseModal}>
-            Закрыть
+            Close
           </Button>
         </Modal.Footer>
       </Modal>

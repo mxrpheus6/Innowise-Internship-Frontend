@@ -1,45 +1,72 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { authApi } from '../api/auth';
+import { createContext, useContext, useEffect, useState, useRef } from "react";
+import keycloak from "../lib/keycloak";
+import { Spinner } from "react-bootstrap";
 
 type AuthContextValue = {
-  token: string | null;
   isAuthenticated: boolean;
-  setToken: (token: string | null) => void;
+  token: string | null;
   logout: () => void;
+  login: () => void;
+  isInitialized: boolean;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setTokenState] = useState<string | null>(() => localStorage.getItem('accessToken'));
-  const navigate = useNavigate();
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
 
-  const setToken = useCallback((value: string | null) => {
-    setTokenState(value);
+  const isRun = useRef(false);
+
+  useEffect(() => {
+    if (isRun.current) return;
+    isRun.current = true;
+
+    keycloak
+      .init({
+        onLoad: "check-sso",
+        pkceMethod: "S256",
+      })
+      .then((authenticated) => {
+        setIsAuthenticated(authenticated);
+        setToken(keycloak.token || null);
+        setIsInitialized(true);
+      })
+      .catch((err) => {
+        console.error("Keycloak init failed", err);
+        setIsInitialized(true);
+      });
   }, []);
 
-  const logout = useCallback(() => {
-    authApi.logout();
-    setTokenState(null);
-    navigate('/login', { replace: true });
-  }, [navigate]);
+  const login = () => {
+    keycloak.login({
+      redirectUri: `${window.location.origin}/profile`,
+    });
+  };
+  const logout = () => {
+    keycloak.logout({
+      redirectUri: `${window.location.origin}/login`,
+    });
+  };
 
-  const value = useMemo(
-    () => ({
-      token,
-      isAuthenticated: !!token,
-      setToken,
-      logout,
-    }),
-    [token, setToken, logout]
-  );
+  const value = {
+    isAuthenticated,
+    token,
+    login,
+    logout,
+    isInitialized,
+  };
+
+  if (!isInitialized) {
+    return <Spinner />;
+  }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 }

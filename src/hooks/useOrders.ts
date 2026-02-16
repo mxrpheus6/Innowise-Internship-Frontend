@@ -1,29 +1,35 @@
-import { useEffect, useState, useCallback } from 'react';
-import { ordersApi } from '../api/orders';
-import type { OrderResponse, OrderStatus } from '../types/orders';
+import { useEffect, useState, useCallback } from "react";
+import { ordersApi } from "../api/orders";
+import type { OrderResponse, OrderStatus } from "../types/orders";
+import { useAuth } from "../context/AuthContext"; // Импортируем контекст авторизации
 
-export function useOrders(userId: string | null, status?: OrderStatus) {
+// Убрали userId из аргументов хука
+export function useOrders(status?: OrderStatus) {
+  const { isAuthenticated } = useAuth(); // Проверяем авторизацию через контекст
   const [orders, setOrders] = useState<OrderResponse[]>([]);
-  const [loading, setLoading] = useState(!!userId);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchOrders = useCallback(async () => {
-    if (!userId) {
+    // Если не авторизован - не делаем запрос
+    if (!isAuthenticated) {
       setLoading(false);
       return;
     }
+
     setLoading(true);
     setError(null);
     try {
-      const data = await ordersApi.getUserOrders(userId, status);
+      // Вызываем API без userId
+      const data = await ordersApi.getUserOrders(status);
       setOrders(data);
     } catch (err) {
-      setError('Не удалось загрузить заказы');
+      setError("Не удалось загрузить заказы");
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, [userId, status]);
+  }, [isAuthenticated, status]);
 
   useEffect(() => {
     fetchOrders();
