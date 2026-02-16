@@ -8,11 +8,6 @@ type ProfileCardProps = {
   onLogout: () => void;
 };
 
-function formatBirthDate(value: string | undefined): string {
-  if (!value) return "—";
-  return new Date(value).toLocaleDateString("ru-RU");
-}
-
 export default function ProfileCard({ user, onLogout }: ProfileCardProps) {
   const navigate = useNavigate();
   const initials = user

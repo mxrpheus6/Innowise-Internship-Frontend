@@ -79,10 +79,9 @@ function translateStatus(status: OrderStatus): string {
 
 export default function OrdersPage() {
   const navigate = useNavigate();
-  const { user, loading: userLoading, error: userError } = useProfile();
+  const { loading: userLoading, error: userError } = useProfile();
   const { orders, loading: ordersLoading, error: ordersError } = useOrders();
 
-  // Состояние для выбранного заказа (для модального окна)
   const [selectedOrder, setSelectedOrder] = useState<OrderResponse | null>(
     null,
   );
