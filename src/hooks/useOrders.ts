@@ -1,39 +1,74 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { ordersApi } from "../api/orders";
 import type { OrderResponse, OrderStatus } from "../types/orders";
-import { useAuth } from "../context/AuthContext"; // Импортируем контекст авторизации
+import { useAuth } from "../context/AuthContext";
 
-// Убрали userId из аргументов хука
-export function useOrders(status?: OrderStatus) {
-  const { isAuthenticated } = useAuth(); // Проверяем авторизацию через контекст
+export function useOrders(status?: OrderStatus, pollingInterval: number = 0) {
+  const { isAuthenticated } = useAuth();
   const [orders, setOrders] = useState<OrderResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchOrders = useCallback(async () => {
-    // Если не авторизован - не делаем запрос
-    if (!isAuthenticated) {
-      setLoading(false);
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  const fetchOrders = useCallback(
+    async (isBackground = false) => {
+      if (!isAuthenticated) {
+        if (isMounted.current) setLoading(false);
+        return;
+      }
+
+      if (!isBackground) {
+        setLoading(true);
+      }
+
+      if (!isBackground) setError(null);
+
+      try {
+        const data = await ordersApi.getUserOrders(status);
+        if (isMounted.current) {
+          setOrders(data);
+        }
+      } catch (err) {
+        console.error(err);
+        if (isMounted.current && !isBackground) {
+          setError("Не удалось загрузить заказы");
+        }
+      } finally {
+        if (isMounted.current && !isBackground) {
+          setLoading(false);
+        }
+      }
+    },
+    [isAuthenticated, status],
+  );
+
+  useEffect(() => {
+    fetchOrders(false);
+  }, [fetchOrders]);
+
+  useEffect(() => {
+    if (pollingInterval <= 0 || !isAuthenticated) return;
+
+    const hasActiveOrders = orders.some((order) => order.status === "NEW");
+
+    if (!loading && orders.length > 0 && !hasActiveOrders) {
       return;
     }
 
-    setLoading(true);
-    setError(null);
-    try {
-      // Вызываем API без userId
-      const data = await ordersApi.getUserOrders(status);
-      setOrders(data);
-    } catch (err) {
-      setError("Не удалось загрузить заказы");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [isAuthenticated, status]);
+    const intervalId = setInterval(() => {
+      fetchOrders(true);
+    }, pollingInterval);
 
-  useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
+    return () => clearInterval(intervalId);
+  }, [pollingInterval, isAuthenticated, orders, loading, fetchOrders]);
 
-  return { orders, loading, error, refetch: fetchOrders };
+  return { orders, loading, error, refetch: () => fetchOrders(false) };
 }

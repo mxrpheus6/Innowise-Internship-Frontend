@@ -80,7 +80,12 @@ function translateStatus(status: OrderStatus): string {
 export default function OrdersPage() {
   const navigate = useNavigate();
   const { loading: userLoading, error: userError } = useProfile();
-  const { orders, loading: ordersLoading, error: ordersError } = useOrders();
+
+  const {
+    orders,
+    loading: ordersLoading,
+    error: ordersError,
+  } = useOrders(undefined, 3000);
 
   const [selectedOrder, setSelectedOrder] = useState<OrderResponse | null>(
     null,
@@ -174,7 +179,6 @@ export default function OrdersPage() {
         </Col>
       </Row>
 
-      {/* Модальное окно с деталями заказа */}
       <Modal
         show={!!selectedOrder}
         onHide={handleCloseModal}
